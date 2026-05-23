@@ -22,8 +22,10 @@ A Chrome extension that silently strips tracking parameters from URLs. No UI, no
 | `amazon.ae/dp/B077T5RQF7/ref=sr_1_4?crid=1VW…&dib=eyJ…&keywords=…&th=1` | `amazon.ae/dp/B077T5RQF7?th=1` |
 | `youtube.com/watch?v=dQw4w9WgXcQ&si=abc123&feature=share` | `youtube.com/watch?v=dQw4w9WgXcQ` |
 | `youtu.be/dQw4w9WgXcQ?si=abc123` | `youtu.be/dQw4w9WgXcQ` |
+| `tiktok.com/@user/video/123456?is_from_webapp=1&sender_device=pc` | `tiktok.com/@user/video/123456` |
 | `x.com/user/status/123?s=09&t=abcXYZ` | `x.com/user/status/123` |
 | `example.com/page?utm_source=newsletter&utm_medium=email&id=42` | `example.com/page?id=42` |
+| `shop.com/product?gad_source=1&srsltid=abc&_ga=2.123…&keep=1` | `shop.com/product?keep=1` |
 
 ---
 
@@ -31,20 +33,37 @@ A Chrome extension that silently strips tracking parameters from URLs. No UI, no
 
 ### On all sites
 
-| Parameter | Source |
+| Parameter(s) | Source |
 |---|---|
-| `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, `utm_id` | Google Analytics UTM |
-| `fbclid`, `igshid` | Facebook / Instagram |
-| `gclid`, `gclsrc`, `dclid`, `gbraid`, `wbraid` | Google Ads |
-| `twclid` | Twitter / X |
+| `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, `utm_id`, `utm_source_platform`, `utm_creative_format`, `utm_marketing_tactic` | Google Analytics UTM (original + extended) |
+| `gclid`, `gclsrc`, `dclid`, `gbraid`, `wbraid` | Google Ads click IDs |
+| `gad_source`, `gad_campaignid` | Google Ads source/campaign tags (2023+) |
+| `srsltid` | Google Shopping / Merchant Center referral |
+| `_ga`, `_gl` | Google Analytics cross-domain session linker |
+| `fbclid` | Facebook Click ID |
+| `igshid`, `igsh` | Instagram Share ID (old + new form) |
+| `mibextid` | Meta mobile sharing / browser extension ID |
+| `ttclid`, `ttadid` | TikTok Click ID / Ad ID |
+| `twclid` | Twitter / X Click ID |
 | `msclkid` | Microsoft Ads |
+| `ScCid`, `scadid` | Snapchat |
+| `epik` | Pinterest |
+| `ndclid` | Nextdoor |
 | `yclid` | Yandex |
 | `mc_eid`, `mc_cid` | Mailchimp |
 | `mkt_tok` | Marketo |
-| `_hsenc`, `_hsmi`, `hsCtaTracking` | HubSpot |
+| `_hsenc`, `_hsmi`, `hsCtaTracking`, `hsa_cam`, `hsa_grp`, `hsa_mt`, `hsa_src`, `hsa_ad`, `hsa_acc`, `hsa_net`, `hsa_kw`, `hsa_tgt`, `hsa_ver` | HubSpot (email + paid ads) |
+| `_ke`, `_kx` | Klaviyo |
 | `ck_subscriber_id` | ConvertKit |
 | `vero_id` | Vero |
+| `dm_i` | dotdigital |
 | `at_medium`, `at_campaign` | Apple / newsletter trackers |
+| `mtm_campaign`, `mtm_source`, `mtm_medium`, `mtm_content`, `mtm_cid`, `mtm_group` | Matomo analytics |
+| `pk_campaign`, `pk_source`, `pk_medium`, `pk_content`, `pk_kwd`, `pk_cid` | Piwik analytics |
+| `ef_id` | Adobe Advertising Cloud / Everflow |
+| `s_kwcid` | Adobe Analytics keyword cost ID (AMO) |
+| `irclickid` | Impact Radius affiliate network |
+| `_branch_match_id` | Branch mobile deep linking |
 | `rb_clickid` | RichBand affiliate |
 | `zanpid` | Zanox / Awin affiliate |
 | `trk`, `trkCampaign` | LinkedIn |
@@ -57,6 +76,10 @@ A Chrome extension that silently strips tracking parameters from URLs. No UI, no
 **Search pages (`/s`):** strips known tracking params (`ref`, `crid`, `dib`, `qid`, `sprefix`, `tag`, etc.) while keeping `keywords` and `sr` which drive the search results.
 
 Also strips `/ref=xxx` path segments from all Amazon URLs.
+
+### On TikTok (`tiktok.com`)
+
+Uses a whitelist — TikTok video IDs are always in the URL path, so every query param is tracking noise. All params are stripped.
 
 ### On YouTube (`youtube.com`, `youtu.be`)
 

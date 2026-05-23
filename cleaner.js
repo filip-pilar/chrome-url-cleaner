@@ -8,41 +8,96 @@
 
   // ---------------------------------------------------------------------------
   // Universal tracking parameters — stripped on every hostname.
-  // These are industry-standard tracking tokens that appear across all sites.
   // ---------------------------------------------------------------------------
   const UNIVERSAL_PARAMS = new Set([
-    // Google Analytics UTM (the most common tracking standard on the web)
-    'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'utm_id',
 
-    // Ad platform click IDs
-    'fbclid',    // Facebook / Instagram
-    'gclid',     // Google Ads
-    'gclsrc',    // Google Ads (DoubleClick source)
-    'dclid',     // Google Display & Video
-    'gbraid',    // Google Ads (iOS app campaigns)
-    'wbraid',    // Google Ads (web-to-app campaigns)
-    'igshid',    // Instagram share ID
-    'twclid',    // Twitter / X
-    'msclkid',   // Microsoft Ads
-    'yclid',     // Yandex
+    // ── Google Analytics UTM (original + extended set Google added later) ──────
+    'utm_source',
+    'utm_medium',
+    'utm_campaign',
+    'utm_term',
+    'utm_content',
+    'utm_id',
+    'utm_source_platform',    // extended UTM: platform (e.g. "Search Ads 360")
+    'utm_creative_format',    // extended UTM: ad creative format
+    'utm_marketing_tactic',   // extended UTM: marketing tactic
 
-    // Email marketing platforms
-    'mc_eid', 'mc_cid',    // Mailchimp
-    'mkt_tok',              // Marketo
-    '_hsenc', '_hsmi',     // HubSpot encoded / message ID
-    'hsCtaTracking',        // HubSpot CTA
-    'ck_subscriber_id',     // ConvertKit
-    'vero_id',              // Vero
-    'at_medium', 'at_campaign', // Apple / newsletter trackers
+    // ── Google Ads & Shopping click / source IDs ──────────────────────────────
+    'gclid',          // Google Ads Click ID
+    'gclsrc',         // Google Ads DoubleClick source
+    'dclid',          // Google Display & Video 360
+    'gbraid',         // Google Ads — iOS app campaigns (SKAdNetwork)
+    'wbraid',         // Google Ads — web-to-app campaigns
+    'gad_source',     // Google Ads source tag (introduced 2023, replaces 'gad')
+    'gad_campaignid', // Google Ads campaign ID tag
+    'srsltid',        // Google Shopping / Merchant Center referral tracking
 
-    // Affiliate networks
+    // ── Google Analytics cross-domain linker ─────────────────────────────────
+    '_ga',   // GA session linker (privacy risk when shared: passes your session)
+    '_gl',   // GA4 cross-domain linker (newer form of _ga)
+
+    // ── Meta (Facebook / Instagram) ──────────────────────────────────────────
+    'fbclid',          // Facebook Click ID
+    'igshid',          // Instagram Share ID (older)
+    'igsh',            // Instagram Share (newer, shorter form)
+    'mibextid',        // Meta mobile sharing / browser extension ID
+
+    // ── TikTok ────────────────────────────────────────────────────────────────
+    'ttclid',   // TikTok Click ID (ad attribution)
+    'ttadid',   // TikTok Ad ID
+
+    // ── Twitter / X ───────────────────────────────────────────────────────────
+    'twclid',   // Twitter/X Click ID (universal — s/t are Twitter-only, handled below)
+
+    // ── Microsoft Ads ─────────────────────────────────────────────────────────
+    'msclkid',  // Microsoft Ads Click ID
+
+    // ── Snapchat ──────────────────────────────────────────────────────────────
+    'ScCid',   // Snapchat Click ID
+    'scadid',  // Snapchat Ad ID
+
+    // ── Pinterest ─────────────────────────────────────────────────────────────
+    'epik',    // Pinterest Click ID
+
+    // ── Nextdoor ──────────────────────────────────────────────────────────────
+    'ndclid',  // Nextdoor Click ID
+
+    // ── Yandex ────────────────────────────────────────────────────────────────
+    'yclid',   // Yandex Click ID
+
+    // ── Email marketing platforms ─────────────────────────────────────────────
+    'mc_eid', 'mc_cid',                              // Mailchimp
+    'mkt_tok',                                        // Marketo
+    '_hsenc', '_hsmi', 'hsCtaTracking',              // HubSpot (email tracking)
+    'hsa_cam', 'hsa_grp', 'hsa_mt', 'hsa_src',      // HubSpot (paid ads)
+    'hsa_ad',  'hsa_acc', 'hsa_net', 'hsa_kw',
+    'hsa_tgt', 'hsa_ver',
+    '_ke', '_kx',                                    // Klaviyo
+    'ck_subscriber_id',                              // ConvertKit
+    'vero_id',                                       // Vero
+    'dm_i',                                          // dotdigital
+    'at_medium', 'at_campaign',                      // Apple/newsletter trackers
+
+    // ── Analytics platforms ───────────────────────────────────────────────────
+    'mtm_campaign', 'mtm_source', 'mtm_medium',      // Matomo
+    'mtm_content',  'mtm_cid',   'mtm_group',
+    'pk_campaign',  'pk_source',  'pk_medium',       // Piwik (Matomo's old name)
+    'pk_content',   'pk_kwd',     'pk_cid',
+
+    // ── Advertising & attribution ─────────────────────────────────────────────
+    'ef_id',             // Adobe Advertising Cloud / Everflow
+    's_kwcid',           // Adobe Analytics keyword cost ID (AMO)
+    'irclickid',         // Impact Radius (Airbnb, Uber, etc.)
+    '_branch_match_id',  // Branch (mobile deep linking, very widely used)
+
+    // ── Affiliate networks ────────────────────────────────────────────────────
     'rb_clickid',  // RichBand
     'zanpid',      // Zanox / Awin
 
-    // LinkedIn
+    // ── LinkedIn ──────────────────────────────────────────────────────────────
     'trk', 'trkCampaign',
 
-    // Misc campaign IDs
+    // ── Generic campaign IDs ──────────────────────────────────────────────────
     'ncid',  // IBM / newsletter campaign
     'icid',  // generic campaign ID
   ]);
@@ -50,13 +105,9 @@
   // ---------------------------------------------------------------------------
   // Amazon product pages (/dp/, /gp/product/) — WHITELIST approach.
   //
-  // Amazon invents new tracking params constantly (pd_rd_*, pf_rd_*, sp_csd,
-  // aref, content-id…). A blacklist can never keep up. Instead: keep only what
-  // is truly functional and strip everything else. A product page renders
-  // entirely from the ASIN in the URL path — query params are either variant
-  // selectors or tracking noise.
+  // Amazon invents new tracking params constantly. A blacklist can never keep
+  // up. Keep only what is truly functional; strip everything else.
   //
-  // Params kept on product pages:
   //   th  — product variant selector (size / colour). Stripping sends the user
   //         to the wrong variant. Everything else is stripped.
   // ---------------------------------------------------------------------------
@@ -64,62 +115,33 @@
 
   // ---------------------------------------------------------------------------
   // Amazon non-product pages (search /s, category, etc.) — BLACKLIST approach.
-  // On search pages, 'keywords' and 'sr' drive the query — they must be kept.
-  // Everything else below is tracking noise safe to remove.
+  // 'keywords' and 'sr' drive the search query — must be kept.
   // ---------------------------------------------------------------------------
   const AMAZON_SEARCH_STRIP = new Set([
-    'ref',        // referral tag (query-param form)
-    'crid',       // search result context ID
-    'dib',        // diversification token
-    'dib_tag',    // diversification tag
-    'smid',       // seller marketplace ID
-    '_encoding',  // legacy encoding hint
-    'psc',        // subscription confirmation
-    'linkCode',   // affiliate link code
-    'ufe',        // UI feature flag
-    'tag',        // affiliate tag
-    'qid',        // query timestamp — tracking only, never functional
-    'sprefix',    // autocomplete prefix tracking — never functional
-    'pd_rd_i',    // product detail recommendation ID
-    'pd_rd_w',    // product detail recommendation widget
-    'pd_rd_wg',   // product detail recommendation widget group
-    'pd_rd_r',    // product detail recommendation request
-    'pf_rd_p',    // page feature recommendation page
-    'pf_rd_r',    // page feature recommendation request
-    'aref',       // Amazon referral
-    'sp_csd',     // sponsored placement data
-    'content-id', // content recommendation ID
+    'ref', 'crid', 'dib', 'dib_tag', 'smid', '_encoding', 'psc', 'linkCode',
+    'ufe', 'tag', 'qid', 'sprefix',
+    'pd_rd_i', 'pd_rd_w', 'pd_rd_wg', 'pd_rd_r',
+    'pf_rd_p', 'pf_rd_r',
+    'aref', 'sp_csd', 'content-id',
   ]);
 
   // ---------------------------------------------------------------------------
-  // Twitter / X — BLACKLIST.
-  // Only on twitter.com and x.com — 's' and 't' are functional on other sites
-  // (GitHub uses 's', many sites use 't').
+  // Twitter / X — extra params beyond what's in UNIVERSAL_PARAMS.
+  // 's' and 't' are functional on GitHub and many other sites, so they are
+  // NOT in the universal list — only stripped on Twitter/X domains.
   // ---------------------------------------------------------------------------
-  const TWITTER_PARAMS = new Set([
-    's',  // share tracking token
-    't',  // tweet tracking token
-  ]);
+  const TWITTER_PARAMS = new Set(['s', 't']);
 
   // ---------------------------------------------------------------------------
-  // YouTube video pages (/watch, /shorts/, and youtu.be) — WHITELIST approach.
+  // YouTube video / playlist pages — WHITELIST approach.
   //
-  // YouTube appends 'si' (share ID), 'feature', 'pp', 'ab_channel', etc. to
-  // nearly every shared link. A whitelist is more robust than tracking them all.
-  //
-  // Params kept on YouTube video/playlist pages:
-  //   v            — video ID (essential)
-  //   t            — timestamp (e.g. ?t=120 or ?t=2m0s)
-  //   list         — playlist ID
-  //   start / end  — clip markers
-  //   search_query — YouTube search results page query
+  // Keep only known functional params; strip si, feature, pp, ab_channel,
+  // and anything else YouTube appends to shared links.
   // ---------------------------------------------------------------------------
   const YOUTUBE_KEEP = new Set(['v', 't', 'list', 'start', 'end', 'search_query']);
 
   // ---------------------------------------------------------------------------
   // Amazon /ref= path segment regex.
-  // Matches /ref= followed by any characters up to the next /, ?, #, or end.
-  // The 'g' flag is required for .replace(); lastIndex is reset after .test().
   // ---------------------------------------------------------------------------
   const AMAZON_REF_PATH_RE = /\/ref=[^/?#]*/g;
 
@@ -128,47 +150,46 @@
   // ---------------------------------------------------------------------------
 
   function isAmazon(hostname) {
-    // Matches: amazon.com, www.amazon.com, amazon.co.uk, amazon.de, amazon.ae, etc.
     return /(?:^|\.)amazon\.[a-z.]{2,6}$/.test(hostname);
   }
 
   function isTwitter(hostname) {
-    return (
-      hostname === 'twitter.com'     ||
-      hostname === 'x.com'           ||
-      hostname === 'www.twitter.com' ||
-      hostname === 'www.x.com'
-    );
+    return hostname === 'twitter.com'     ||
+           hostname === 'x.com'           ||
+           hostname === 'www.twitter.com' ||
+           hostname === 'www.x.com';
   }
 
   function isYouTube(hostname) {
-    // youtube.com, www.youtube.com, m.youtube.com, music.youtube.com
-    return hostname === 'youtube.com'       ||
-           hostname === 'www.youtube.com'   ||
-           hostname === 'm.youtube.com'     ||
+    return hostname === 'youtube.com'     ||
+           hostname === 'www.youtube.com' ||
+           hostname === 'm.youtube.com'   ||
            hostname === 'music.youtube.com';
   }
 
   function isYouTubeBe(hostname) {
-    // youtu.be short links — video ID is in the path, only 't' is functional
     return hostname === 'youtu.be';
+  }
+
+  function isTikTok(hostname) {
+    // TikTok video IDs are always in the path — no query params are functional.
+    return hostname === 'tiktok.com'   ||
+           hostname === 'www.tiktok.com' ||
+           hostname === 'm.tiktok.com';
   }
 
   // ---------------------------------------------------------------------------
   // Main cleaning function.
-  // Returns the cleaned URL string, or the original string if nothing changed
-  // or the input is not a cleanable URL.
+  // Returns the cleaned URL string, or the original string if nothing changed.
   // ---------------------------------------------------------------------------
   function cleanUrl(rawUrl) {
     let url;
     try {
       url = new URL(rawUrl);
     } catch (_) {
-      // Not a parseable URL: mailto:, javascript:, data:, plain text, etc.
-      return rawUrl;
+      return rawUrl; // not a parseable URL
     }
 
-    // Only clean http and https. Leave ftp, blob, etc. untouched.
     if (url.protocol !== 'http:' && url.protocol !== 'https:') {
       return rawUrl;
     }
@@ -182,8 +203,6 @@
         url.pathname.includes('/dp/') || url.pathname.includes('/gp/product/');
 
       if (isProductPage) {
-        // WHITELIST: keep only AMAZON_PRODUCT_KEEP; strip everything else.
-        // Handles all current and future Amazon tracking params automatically.
         for (const key of [...url.searchParams.keys()]) {
           if (!AMAZON_PRODUCT_KEEP.has(key)) {
             url.searchParams.delete(key);
@@ -191,8 +210,6 @@
           }
         }
       } else {
-        // BLACKLIST for search / non-product pages.
-        // 'keywords' and 'sr' are intentionally absent — they drive results.
         const toRemove = new Set(UNIVERSAL_PARAMS);
         for (const p of AMAZON_SEARCH_STRIP) toRemove.add(p);
         for (const key of [...url.searchParams.keys()]) {
@@ -208,15 +225,13 @@
       if (AMAZON_REF_PATH_RE.test(url.pathname)) {
         AMAZON_REF_PATH_RE.lastIndex = 0;
         url.pathname = url.pathname.replace(AMAZON_REF_PATH_RE, '');
-        url.pathname = url.pathname.replace(/\/\/+/g, '/'); // collapse double slashes
+        url.pathname = url.pathname.replace(/\/\/+/g, '/');
         changed = true;
       }
       AMAZON_REF_PATH_RE.lastIndex = 0;
 
     // ── YouTube ───────────────────────────────────────────────────────────────
     } else if (isYouTube(hostname)) {
-      // WHITELIST: keep only known functional params; strip si, feature, pp,
-      // ab_channel, and anything else YouTube appends to shared links.
       for (const key of [...url.searchParams.keys()]) {
         if (!YOUTUBE_KEEP.has(key)) {
           url.searchParams.delete(key);
@@ -224,13 +239,21 @@
         }
       }
 
+    // ── youtu.be ──────────────────────────────────────────────────────────────
     } else if (isYouTubeBe(hostname)) {
-      // youtu.be short URLs: video ID is in path, only timestamp is functional.
       for (const key of [...url.searchParams.keys()]) {
         if (key !== 't') {
           url.searchParams.delete(key);
           changed = true;
         }
+      }
+
+    // ── TikTok ────────────────────────────────────────────────────────────────
+    } else if (isTikTok(hostname)) {
+      // Video IDs are always in the path. Every query param is tracking noise.
+      for (const key of [...url.searchParams.keys()]) {
+        url.searchParams.delete(key);
+        changed = true;
       }
 
     // ── Twitter / X ───────────────────────────────────────────────────────────
@@ -244,7 +267,7 @@
         }
       }
 
-    // ── All other sites ────────────────────────────────────────────────────────
+    // ── All other sites ───────────────────────────────────────────────────────
     } else {
       for (const key of [...url.searchParams.keys()]) {
         if (UNIVERSAL_PARAMS.has(key)) {
@@ -255,7 +278,7 @@
     }
 
     if (!changed) {
-      // Return the original string to avoid spurious URL normalization
+      // Return the original string — avoids spurious URL normalization
       // (the URL constructor may add a trailing '?' or alter percent-encoding).
       return rawUrl;
     }
