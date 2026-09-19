@@ -4,6 +4,21 @@ A Chrome extension that silently strips tracking parameters from URLs. No UI, no
 
 ---
 
+## Installation
+
+This extension is not on the Chrome Web Store. Install it in Developer Mode:
+
+1. [Download or clone this repository](https://github.com/filip-pilar/chrome-url-cleaner) to your Mac.
+2. Open Chrome and go to `chrome://extensions`.
+3. Enable **Developer mode** using the toggle in the top-right corner.
+4. Click **Load unpacked**.
+5. Select the extracted repository folder containing `manifest.json`.
+6. Done. No restart needed.
+
+To update after pulling new changes, go back to `chrome://extensions` and click the reload icon (↻) on the extension card.
+
+---
+
 ## What it does
 
 **When you navigate to a page**, the extension rewrites the address bar URL in place (via `history.replaceState`) to remove tracking parameters. By the time you look at the address bar, the URL is already clean.
@@ -99,21 +114,6 @@ Uses a whitelist — keeps `v` (video ID), `t` (timestamp), `list` (playlist), `
 - **Any parameter not in the lists above** — the extension only removes what it knows is tracking noise.
 - **Right-click → "Copy link address"** — Chrome native UI, content scripts cannot intercept it. See [Known Limitations](#known-limitations).
 - **Pasting into Chrome's address bar or native Mac apps** — content scripts only run inside web pages.
-
----
-
-## Installation
-
-This extension is not on the Chrome Web Store. Install it in Developer Mode:
-
-1. [Download or clone this repository](https://github.com/filip-pilar/chrome-url-cleaner) to your Mac.
-2. Open Chrome and go to `chrome://extensions`.
-3. Enable **Developer mode** using the toggle in the top-right corner.
-4. Click **Load unpacked**.
-5. Select the `Chrome-URL-Cleaner` folder.
-6. Done. No restart needed.
-
-To update after pulling new changes, go back to `chrome://extensions` and click the reload icon (↻) on the extension card.
 
 ---
 
